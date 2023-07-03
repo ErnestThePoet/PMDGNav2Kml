@@ -4,10 +4,10 @@ import re
 # Set the range of lat and lon within which
 # the waypoints and navaids are to be converted.
 # Northern and Eastern are positive values.
-LAT_MAX = 55.0
 LAT_MIN = 30.0  # 17
-LON_MAX = 135.0
+LAT_MAX = 55.0
 LON_MIN = 100.0  # 73
+LON_MAX = 135.0
 
 # Placemark icons in Google Earth
 STYLE_URLS = {
