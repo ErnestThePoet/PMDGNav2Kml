@@ -1,83 +1,42 @@
 import re
+from navdata_types import *
+from pmdg_nav_reader import *
+from navdata_kml_writer import write_navdata_kml
 
-########## SETTINGS SECTION START ##########
-# Set the range of lat and lon within which
-# the waypoints and navaids are to be converted.
-# Northern and Eastern are positive values.
-LAT_MIN = 30.0  # 17
-LAT_MAX = 55.0
-LON_MIN = 100.0  # 73
-LON_MAX = 135.0
-
-# Placemark icons in Google Earth
-STYLE_URLS = {
-    "WPT": "#msn_triangle",
-    "VOR": "#msn_open-diamond",
-    "VORD": "#msn_square",
-    "DME": "#msn_polygon",
-    "NDB": "#m_ylw-pushpin"
-}
-
-# PMDG FIX and AID navdata file path
-PMDG_AID_PATH = "wpNavAID.txt"
-PMDG_FIX_PATH = "wpNavFIX.txt"
-
-# Output kml path
-OUTPUT_PATH = "output.kml"
-########## SETTINGS SECTION END ##########
-
-with open("placemark_template.txt", "r", encoding="utf-8") as f:
-    template_str = f.read()
-
-output_str = ""
+CHINA_LAT_MIN = 17.0
+CHINA_LAT_MAX = 55.0
+CHINA_LON_MIN = 73.0
+CHINA_LON_MAX = 135.0
 
 
-def read_pmdg_aid_list(file_name):
-    with open(file_name, "r", encoding="utf-8") as f:
-        aid_lines = f.readlines()
-
-    for i in aid_lines:
-        if i.startswith(";"):
-            continue
-        lat = float(i[33:43].replace(" ", ""))
-        lon = float(i[43:57].replace(" ", ""))
-        if "ILS" not in i[29:33] \
-                and LAT_MIN < lat < LAT_MAX \
-                and LON_MIN < lon < LON_MAX:
-            global output_str
-            output_str += template_str.format(
-                f"{i[24:29].replace(' ', '')}({i[0:24].replace(' ', '')})",
-                lat,
-                lon,
-                STYLE_URLS[i[29:33].replace(" ", "")])
+def filter_latlon_waypoints(obj: Waypoint) -> bool:
+    return re.match("[0-9]{2}[NEWS][0-9]{2}", obj.code) is None \
+           and re.match("[0-9]{4}[NEWS]", obj.code) is None
 
 
-def read_pmdg_wpt_list(file_name):
-    with open(file_name, "r", encoding="utf-8") as f:
-        wpt_lines = f.readlines()
-
-    for i in wpt_lines:
-        if i.startswith(";"):
-            continue
-        if re.match("[0-9]{2}[NEWS][0-9]{2}", i[0:24]) is None \
-                and re.match("[0-9]{4}[NEWS]", i[0:24]) is None:
-            lat = float(i[29:39].replace(" ", ""))
-            lon = float(i[39:50].replace(" ", ""))
-            if LAT_MIN < lat < LAT_MAX \
-                    and LON_MIN < lon < LON_MAX:
-                global output_str
-                output_str += template_str.format(
-                    i[0:24].replace(' ', ''),
-                    lat,
-                    lon,
-                    STYLE_URLS["WPT"])
+def filter_latlon_waypoints_in_china(obj: Waypoint) -> bool:
+    return re.match("[0-9]{2}[NEWS][0-9]{2}", obj.code) is None and \
+           re.match("[0-9]{4}[NEWS]", obj.code) is None and \
+           filter_point_in_china(obj)
 
 
-read_pmdg_aid_list(PMDG_AID_PATH)
-read_pmdg_wpt_list(PMDG_FIX_PATH)
+def filter_point_in_china(obj: NavDataAidObject | Airport | Waypoint) -> bool:
+    return CHINA_LAT_MIN <= obj.lat <= CHINA_LAT_MAX and \
+           CHINA_LON_MIN <= obj.lon <= CHINA_LON_MAX
 
-with open("kml_template.txt", "r", encoding="utf-8") as f:
-    output_str = f.read().format(output_str)
 
-with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-    f.write(output_str)
+def filter_airway_in_china(obj: Airway) -> bool:
+    return any([CHINA_LAT_MIN <= item[0] <= CHINA_LAT_MAX and \
+                CHINA_LON_MIN <= item[1] <= CHINA_LON_MAX for item in obj.waypoint_coords])
+
+
+waypoints = read_pmdg_waypoint_list("./NavData/wpNavFIX.txt", filter_latlon_waypoints)
+airports = read_pmdg_airport_list("./NavData/airports.dat", "./NavData/wpNavAPT.txt")
+navaids = read_pmdg_aid_list("./NavData/wpNavAID.txt")
+airways = read_pmdg_airway_list("./NavData/wpNavRTE.txt")
+
+write_navdata_kml("./out/world.kml",
+                  waypoints,
+                  airports,
+                  navaids,
+                  airways)

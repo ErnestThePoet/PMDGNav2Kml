@@ -1,2 +1,3 @@
-*.kml
-/PMDG
+kml_template_original.kml
+/NavData
+/out
