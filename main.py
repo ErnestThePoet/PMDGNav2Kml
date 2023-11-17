@@ -6,7 +6,7 @@ from navdata_kml_writer import write_navdata_kml
 CHINA_LAT_MIN = 17.0
 CHINA_LAT_MAX = 55.0
 CHINA_LON_MIN = 73.0
-CHINA_LON_MAX = 135.0
+CHINA_LON_MAX = 145.0
 
 
 def filter_latlon_waypoints(obj: Waypoint) -> bool:
@@ -30,12 +30,12 @@ def filter_airway_in_china(obj: Airway) -> bool:
                 CHINA_LON_MIN <= item[1] <= CHINA_LON_MAX for item in obj.waypoint_coords])
 
 
-waypoints = read_pmdg_waypoint_list("./NavData/wpNavFIX.txt", filter_latlon_waypoints)
-airports = read_pmdg_airport_list("./NavData/airports.dat", "./NavData/wpNavAPT.txt")
-navaids = read_pmdg_aid_list("./NavData/wpNavAID.txt")
-airways = read_pmdg_airway_list("./NavData/wpNavRTE.txt")
+waypoints = read_pmdg_waypoint_list("./NavData/wpNavFIX.txt", filter_latlon_waypoints_in_china)
+airports = read_pmdg_airport_list("./NavData/airports.dat", "./NavData/wpNavAPT.txt", filter_point_in_china)
+navaids = read_pmdg_aid_list("./NavData/wpNavAID.txt", filter_point_in_china)
+airways = read_pmdg_airway_list("./NavData/wpNavRTE.txt", filter_airway_in_china)
 
-write_navdata_kml("./out/world.kml",
+write_navdata_kml("./out/china.kml",
                   waypoints,
                   airports,
                   navaids,
