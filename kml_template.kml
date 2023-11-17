@@ -4,7 +4,7 @@
 	xmlns:kml="http://www.opengis.net/kml/2.2"
 	xmlns:atom="http://www.w3.org/2005/Atom">
 	<Document>
-		<name>kml_template.kml</name>
+		<name>Nav Data</name>
 		<visibility>0</visibility>
 		<Style id="sh_triangle">
 			<IconStyle>
